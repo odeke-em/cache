@@ -9,37 +9,6 @@ import (
 	"time"
 )
 
-type expirableValue struct {
-	value     interface{}
-	entryTime time.Time
-}
-
-func (e *expirableValue) Value() interface{} {
-	if e == nil {
-		return nil
-	}
-	return e.value
-}
-
-func (e *expirableValue) Expired(q time.Time) bool {
-	if e == nil {
-		return true
-	}
-
-	return e.entryTime.Before(q)
-}
-
-var newExpirableValue = func(v interface{}) *expirableValue {
-	return newExpirableValueWithOffset(v, 0)
-}
-
-func newExpirableValueWithOffset(v interface{}, expiry int) *expirableValue {
-	return &expirableValue{
-		value:     v,
-		entryTime: time.Now().Add(time.Duration(expiry)),
-	}
-}
-
 func parDir(p string) string {
 	return filepath.Dir(p)
 }
@@ -65,7 +34,7 @@ func TestInit(t *testing.T) {
 
 	manifest := strings.Split(manifestStr, "\n")
 
-	expiryMs := 25
+	expiryMs := uint(25)
 
 	tick := time.Tick(time.Duration(expiryMs))
 
@@ -76,7 +45,7 @@ func TestInit(t *testing.T) {
 	for _, item := range manifest {
 		go func(p string) {
 			par := parDir(p)
-			exp := newExpirableValueWithOffset(p, expiryMs)
+			exp := NewExpirableValueWithOffset(p, expiryMs)
 
 			store.Put(par, exp)
 			retr, ok := store.Get(par)
